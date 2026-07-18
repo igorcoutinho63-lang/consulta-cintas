@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Consulta de Cintas — Central de Enlonamento</title>
+<style>
+  :root{
+    --verde-escuro:#0f2e1f;
+    --verde:#1f5e3d;
+    --verde-claro:#5a9c73;
+    --amarelo:#f0b429;
+    --fundo:#f6f5f0;
+    --cartao:#ffffff;
+    --texto:#1a1a1a;
+    --texto-suave:#5c6660;
+    --borda:#dfe3de;
+    --alerta:#c1440e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--fundo);
+    color:var(--texto);
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  header{
+    background:var(--verde-escuro);
+    color:#fff;
+    padding:20px 18px 24px;
+    border-bottom:5px solid var(--amarelo);
+  }
+  header h1{
+    font-size:1.3rem;
+    font-weight:700;
+    letter-spacing:.2px;
+  }
+  header p{
+    font-size:.85rem;
+    color:#c7d8cd;
+    margin-top:4px;
+  }
+  main{
+    max-width:520px;
+    margin:0 auto;
+    padding:18px;
+  }
+  .cartao{
+    background:var(--cartao);
+    border:1px solid var(--borda);
+    border-radius:10px;
+    padding:18px;
+    margin-bottom:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .rotulo-secao{
+    font-size:.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--texto-suave);
+    margin-bottom:10px;
+  }
+  #preview-wrap{
+    display:none;
+    margin-bottom:12px;
+  }
+  #preview{
+    width:100%;
+    border-radius:8px;
+    display:block;
+    max-height:280px;
+    object-fit:cover;
+  }
+  .botoes-captura{
+    display:flex;
+    gap:10px;
+  }
+  .botao{
+    flex:1;
+    padding:14px 12px;
+    border-radius:8px;
+    border:none;
+    font-size:.95rem;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:opacity .15s;
+  }
+  .botao:active{opacity:.8;}
+  .botao-primario{
+    background:var(--verde);
+    color:#fff;
+  }
+  .botao-secundario{
+    background:#fff;
+    color:var(--verde);
+    border:1.5px solid var(--verde);
+  }
+  .botao-analisar{
+    width:100%;
+    background:var(--amarelo);
+    color:var(--verde-escuro);
+    padding:15px;
+    border-radius:8px;
+    border:none;
+    font-weight:700;
+    font-size:1rem;
+    margin-top:12px;
+    cursor:pointer;
+  }
+  .botao-analisar:disabled{
+    background:#e5decb;
+    color:#9a9284;
+    cursor:not-allowed;
+  }
+  input[type=file]{display:none;}
+  #status{
+    text-align:center;
+    font-size:.85rem;
+    color:var(--texto-suave);
+    margin-top:10px;
+    min-height:18px;
+  }
+  .resultado{display:none;}
+  .resultado.ativo{display:block;}
+  .material-badge{
+    display:inline-block;
+    background:var(--verde-escuro);
+    color:#fff;
+    font-size:.75rem;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+  .material-nome{
+    font-size:1.3rem;
+    font-weight:700;
+    margin-bottom:2px;
+  }
+  .material-setor{
+    font-size:.85rem;
+    color:var(--texto-suave);
+    margin-bottom:16px;
+  }
+  .grid-numeros{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .numero-cartao{
+    background:var(--fundo);
+    border:1px solid var(--borda);
+    border-radius:8px;
+    padding:14px;
+    text-align:center;
+  }
+  .numero-valor{
+    font-size:2.1rem;
+    font-weight:800;
+    color:var(--verde);
+    line-height:1;
+  }
+  .numero-rotulo{
+    font-size:.75rem;
+    color:var(--texto-suave);
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    margin-top:4px;
+  }
+  .observacao{
+    background:#fdf6e3;
+    border-left:3px solid var(--amarelo);
+    padding:10px 12px;
+    font-size:.85rem;
+    border-radius:4px;
+    color:#4a4030;
+  }
+  .aviso-confianca{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    background:#fdeee8;
+    border-left:3px solid var(--alerta);
+    padding:10px 12px;
+    border-radius:4px;
+    font-size:.82rem;
+    color:#7a2e10;
+    margin-bottom:14px;
+  }
+  .selecao-manual{
+    margin-top:14px;
+  }
+  .selecao-manual summary{
+    cursor:pointer;
+    font-size:.85rem;
+    font-weight:600;
+    color:var(--verde);
+    padding:8px 0;
+  }
+  select{
+    width:100%;
+    padding:12px;
+    border-radius:8px;
+    border:1px solid var(--borda);
+    font-size:.9rem;
+    margin-top:8px;
+    background:#fff;
+  }
+  .botao-nova{
+    width:100%;
+    background:transparent;
+    border:1.5px solid var(--verde);
+    color:var(--verde);
+    padding:12px;
+    border-radius:8px;
+    font-weight:600;
+    margin-top:14px;
+    cursor:pointer;
+  }
+  .rodape-fonte{
+    text-align:center;
+    font-size:.7rem;
+    color:#a5aca6;
+    margin-top:18px;
+    line-height:1.5;
+  }
+  .spinner{
+    width:16px;height:16px;
+    border:2px solid #e5decb;
+    border-top-color:var(--verde-escuro);
+    border-radius:50%;
+    animation:girar .7s linear infinite;
+    display:inline-block;
+  }
+  @keyframes girar{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Consulta de Cintas e Catracas</h1>
+  <p>Tire uma foto do material para identificar a quantidade necessária</p>
+</header>
+
+<main>
+
+  <div class="cartao">
+    <div class="rotulo-secao">Foto do material</div>
+
+    <div id="preview-wrap">
+      <img id="preview" alt="Pré-visualização">
+    </div>
+
+    <div class="botoes-captura">
+      <button class="botao botao-primario" id="btn-camera">📷 Tirar foto</button>
+      <button class="botao botao-secundario" id="btn-galeria">🖼️ Da galeria</button>
+    </div>
+    <input type="file" id="input-camera" accept="image/*" capture="environment">
+    <input type="file" id="input-galeria" accept="image/*">
+
+    <button class="botao-analisar" id="btn-analisar" disabled>Identificar material</button>
+    <div id="status"></div>
+  </div>
+
+  <div class="cartao resultado" id="cartao-resultado">
+    <div id="aviso-confianca-wrap"></div>
+
+    <span class="material-badge" id="badge-setor"></span>
+    <div class="material-nome" id="nome-material"></div>
+    <div class="material-setor" id="nome-setor"></div>
+
+    <div class="grid-numeros">
+      <div class="numero-cartao">
+        <div class="numero-valor" id="qtd-cintas">—</div>
+        <div class="numero-rotulo">Cintas</div>
+      </div>
+      <div class="numero-cartao">
+        <div class="numero-valor" id="qtd-catracas">—</div>
+        <div class="numero-rotulo">Catracas</div>
+      </div>
+    </div>
+
+    <div class="observacao" id="observacao-texto" style="display:none;"></div>
+
+    <details class="selecao-manual">
+      <summary>Não é esse material? Selecionar manualmente</summary>
+      <select id="select-manual"></select>
+    </details>
+
+    <button class="botao-nova" id="btn-nova-foto">Analisar nova foto</button>
+  </div>
+
+  <div class="rodape-fonte">
+    Base de dados: Manual de Consulta — Quantidade de Cintas e Catracas por Material (ref. PPO-1920-GLOG).<br>
+    Reconhecimento de material por IA local (sem custo).<br>
+    Confirme sempre valores críticos com a supervisão antes da liberação da carga.
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+<script>
+// ⚠️ COLE AQUI O LINK DO SEU MODELO TREINADO NO TEACHABLE MACHINE
+// Depois de treinar em teachablemachine.withgoogle.com, clique em "Export Model" > "Upload (shareable link)"
+// e cole o link gerado aqui (ver README.md para o passo a passo completo)
+const URL_MODELO = "COLE_AQUI_O_LINK_DO_MODELO";
+
+// IMPORTANTE: os nomes das classes que você criar no Teachable Machine
+// devem ser EXATAMENTE iguais aos nomes de "material" na tabela abaixo,
+// senão o app não vai conseguir casar o resultado com a quantidade de cintas/catracas.
+
+const TABELA = [
+  {setor:"DP01 · GBTC", material:"Spider", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP01 · GBTC", material:"Rolo", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP01 · GBTC", material:"Fio Máquina (Osasco)", cintas:2, catracas:2, obs:"Abraça todos"},
+  {setor:"DP01 · GBTC", material:"Fio Máquina", cintas:2, catracas:2, obs:"Sempre abraça a primeira e a última, mais 2"},
+  {setor:"DP02 · GSOL", material:"Barrica (solda)", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP02 · GSOL", material:"Caixa de solda", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP02 · GSOL", material:"Paletes com eletrodo revestido", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP02 · GSOL", material:"Carretéis de plástico", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP02 · GSOL", material:"Spider", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP03 · GGAL", material:"Spider", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP03 · GGAL", material:"Material Galvanizado", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP03 · GGAL", material:"Rolo (P5)", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP03 · GGAL", material:"Carretel", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP04 · GPRO", material:"Spider", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP04 · GPRO", material:"Rolo", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP04 · GPRO", material:"Cordoalha", cintas:4, catracas:4, obs:"1 cinta por fileira"},
+  {setor:"DP04 · GPRO", material:"Insumo", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP04 · GPRO", material:"Laminado", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP04 · GPRO", material:"Bambolê (carreta grade baixa)", cintas:11, catracas:11, obs:""},
+  {setor:"DP05 · CLBH", material:"Spider", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP05 · CLBH", material:"Laminado", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+  {setor:"DP05 · CLBH", material:"Rolo", cintas:1, catracas:1, obs:"1 cinta por fileira"},
+];
+
+const inputCamera = document.getElementById('input-camera');
+const inputGaleria = document.getElementById('input-galeria');
+const btnCamera = document.getElementById('btn-camera');
+const btnGaleria = document.getElementById('btn-galeria');
+const btnAnalisar = document.getElementById('btn-analisar');
+const previewWrap = document.getElementById('preview-wrap');
+const preview = document.getElementById('preview');
+const statusEl = document.getElementById('status');
+const cartaoResultado = document.getElementById('cartao-resultado');
+const btnNovaFoto = document.getElementById('btn-nova-foto');
+const selectManual = document.getElementById('select-manual');
+
+let arquivoImagem = null;
+let modelo = null;
+let modeloCarregando = null;
+
+// Popula o select manual
+selectManual.innerHTML = '<option value="">— Selecionar material —</option>' +
+  TABELA.map((item, i) => `<option value="${i}">${item.material} (${item.setor})</option>`).join('');
+
+btnCamera.addEventListener('click', () => inputCamera.click());
+btnGaleria.addEventListener('click', () => inputGaleria.click());
+
+inputCamera.addEventListener('change', (e) => carregarImagem(e.target.files[0]));
+inputGaleria.addEventListener('change', (e) => carregarImagem(e.target.files[0]));
+
+function carregarImagem(file) {
+  if (!file) return;
+  arquivoImagem = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    preview.src = e.target.result;
+    previewWrap.style.display = 'block';
+    btnAnalisar.disabled = false;
+    cartaoResultado.classList.remove('ativo');
+    statusEl.textContent = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+btnNovaFoto.addEventListener('click', () => {
+  cartaoResultado.classList.remove('ativo');
+  previewWrap.style.display = 'none';
+  btnAnalisar.disabled = true;
+  arquivoImagem = null;
+  inputCamera.value = '';
+  inputGaleria.value = '';
+});
+
+// Carrega o modelo do Teachable Machine (uma vez só, fica em cache no navegador/app)
+async function carregarModelo() {
+  if (modelo) return modelo;
+  if (modeloCarregando) return modeloCarregando;
+
+  const urlModelo = URL_MODELO.replace(/\/?$/, '/') + 'model.json';
+  const urlMetadata = URL_MODELO.replace(/\/?$/, '/') + 'metadata.json';
+
+  modeloCarregando = tmImage.load(urlModelo, urlMetadata).then(m => {
+    modelo = m;
+    return m;
+  });
+  return modeloCarregando;
+}
+
+btnAnalisar.addEventListener('click', async () => {
+  if (!arquivoImagem) return;
+
+  if (URL_MODELO.includes("COLE_AQUI")) {
+    statusEl.textContent = 'Modelo ainda não configurado. Treine no Teachable Machine e cole o link no código (veja README.md).';
+    cartaoResultado.classList.add('ativo');
+    return;
+  }
+
+  btnAnalisar.disabled = true;
+  statusEl.innerHTML = '<span class="spinner"></span> Carregando modelo e identificando material...';
+
+  try {
+    const m = await carregarModelo();
+
+    const img = new Image();
+    img.src = preview.src;
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+
+    const predicoes = await m.predict(img);
+    predicoes.sort((a, b) => b.probability - a.probability);
+    const melhor = predicoes[0];
+
+    let confianca = 'baixa';
+    if (melhor.probability >= 0.85) confianca = 'alta';
+    else if (melhor.probability >= 0.6) confianca = 'media';
+
+    exibirResultado({
+      material: melhor.className,
+      confianca: confianca,
+      motivo: `Reconhecido com ${Math.round(melhor.probability * 100)}% de confiança`
+    });
+
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = 'Não consegui analisar a imagem. Tente novamente ou selecione manualmente abaixo.';
+    cartaoResultado.classList.add('ativo');
+    btnAnalisar.disabled = false;
+  }
+});
+
+function exibirResultado(analise) {
+  statusEl.textContent = '';
+  btnAnalisar.disabled = false;
+
+  let indice = TABELA.findIndex(t => t.material === analise.material);
+  if (indice === -1) indice = 0;
+
+  preencherCartao(indice, analise.confianca, analise.motivo);
+}
+
+function preencherCartao(indice, confianca, motivo) {
+  const item = TABELA[indice];
+
+  document.getElementById('badge-setor').textContent = item.setor;
+  document.getElementById('nome-material').textContent = item.material;
+  document.getElementById('nome-setor').textContent = motivo ? motivo : 'Selecionado manualmente';
+  document.getElementById('qtd-cintas').textContent = item.cintas;
+  document.getElementById('qtd-catracas').textContent = item.catracas;
+
+  const obsEl = document.getElementById('observacao-texto');
+  if (item.obs) {
+    obsEl.style.display = 'block';
+    obsEl.textContent = item.obs;
+  } else {
+    obsEl.style.display = 'none';
+  }
+
+  const avisoWrap = document.getElementById('aviso-confianca-wrap');
+  if (confianca === 'baixa' || confianca === 'media') {
+    avisoWrap.innerHTML = `<div class="aviso-confianca">⚠️ <span>Identificação com confiança ${confianca}. Confira o material abaixo ou selecione manualmente.</span></div>`;
+  } else {
+    avisoWrap.innerHTML = '';
+  }
+
+  selectManual.value = indice;
+  cartaoResultado.classList.add('ativo');
+  cartaoResultado.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+selectManual.addEventListener('change', () => {
+  if (selectManual.value === '') return;
+  preencherCartao(parseInt(selectManual.value), null, null);
+});
+</script>
+
+</body>
+</html>
