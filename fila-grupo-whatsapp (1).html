@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviso de Fila — Grupo WhatsApp</title>
+<style>
+  :root{
+    --dark-green:#0F2E1F;
+    --mid-green:#1F5E3D;
+    --lima:#8FBF3F;
+    --amber:#F0B429;
+    --paper:#F6F7F2;
+    --ink:#16241C;
+    --line:#D8DED2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  header{
+    background:var(--dark-green);
+    color:#fff;
+    padding:22px 20px;
+  }
+  header h1{
+    margin:0;
+    font-size:1.25rem;
+    letter-spacing:.2px;
+  }
+  header p{
+    margin:6px 0 0;
+    font-size:.85rem;
+    color:#CFE3D6;
+  }
+  main{
+    max-width:760px;
+    margin:0 auto;
+    padding:18px;
+  }
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-size:.95rem;
+    margin:0 0 4px;
+    color:var(--mid-green);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .step-num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px;height:22px;
+    border-radius:50%;
+    background:var(--lima);
+    color:var(--dark-green);
+    font-size:.8rem;
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .hint{
+    font-size:.78rem;
+    color:#5b6b60;
+    margin:0 0 10px;
+  }
+  textarea{
+    width:100%;
+    min-height:160px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px;
+    font-family:ui-monospace, Consolas, monospace;
+    font-size:.78rem;
+    resize:vertical;
+  }
+  button{
+    border:none;
+    border-radius:8px;
+    padding:10px 16px;
+    font-size:.85rem;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:10px;
+  }
+  .btn-primary{
+    background:var(--mid-green);
+    color:#fff;
+  }
+  .btn-primary:hover{background:var(--dark-green);}
+  .status{
+    font-size:.8rem;
+    margin-top:8px;
+    color:var(--mid-green);
+    min-height:1em;
+  }
+  .status.err{color:#B3401B;}
+  .queue-list{
+    list-style:none;
+    margin:12px 0 0;
+    padding:0;
+  }
+  .queue-list li{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin-bottom:6px;
+    font-size:.85rem;
+    background:var(--paper);
+  }
+  .queue-list li.next{
+    border-color:var(--amber);
+    background:#FFF6E0;
+    font-weight:700;
+  }
+  .pos{
+    width:24px;height:24px;
+    border-radius:50%;
+    background:var(--dark-green);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:.75rem;
+    flex-shrink:0;
+  }
+  .queue-list li.next .pos{background:var(--amber);color:var(--dark-green);}
+  .badge{
+    font-size:.7rem;
+    padding:1px 7px;
+    border-radius:10px;
+    font-weight:700;
+  }
+  .badge.Normal{background:#E1F0D8;color:var(--mid-green);}
+  .badge.Alerta{background:#FFF1CC;color:#8A6300;}
+  .badge.Urgente{background:#FBDDD3;color:#B3401B;}
+  .reorder{
+    margin-left:auto;
+    display:flex;
+    gap:4px;
+  }
+  .reorder button{
+    margin:0;
+    padding:2px 8px;
+    background:#eef1ea;
+    color:var(--ink);
+    font-size:.75rem;
+  }
+  .msg-preview{
+    white-space:pre-wrap;
+    background:var(--dark-green);
+    color:#EAF2EC;
+    padding:14px;
+    border-radius:8px;
+    font-family:ui-monospace, Consolas, monospace;
+    font-size:.85rem;
+    line-height:1.5;
+    margin-top:10px;
+  }
+  .aviso{
+    background:#FFF6E0;
+    border:1px solid var(--amber);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:.78rem;
+    color:#6b5200;
+    margin-bottom:16px;
+  }
+  input[type=text]{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px;
+    font-size:.9rem;
+  }
+  #qrOutput{
+    margin-top:12px;
+    text-align:center;
+  }
+  #qrOutput canvas{
+    border:8px solid #fff;
+    border-radius:8px;
+  }
+  .consulta-resultado{
+    text-align:center;
+    padding:20px;
+  }
+  .consulta-pos{
+    font-size:2.4rem;
+    font-weight:800;
+    color:var(--dark-green);
+  }
+  .consulta-nome{
+    font-size:1.1rem;
+    font-weight:700;
+    margin-top:4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="consultaView" style="display:none;">
+  <header>
+    <h1>Fila de Enlonamento</h1>
+    <p>Posição atual de cada caminhão</p>
+  </header>
+  <main>
+    <div class="card">
+      <div id="consultaResultado"><p class="status">Carregando fila...</p></div>
+      <button class="btn-primary" onclick="carregarFilaPublica()">Atualizar</button>
+    </div>
+  </main>
+</div>
+
+<div id="adminView">
+
+<header>
+  <h1>Fila de Enlonamento — Painel do Encarregado</h1>
+  <p>Cole direto da tabela do Radar Expedição (Ctrl+C na tabela, Ctrl+V aqui). Só entram na fila os caminhões cuja Seção atual é ENLONAMENTO.</p>
+</header>
+
+<main>
+
+  <div class="aviso">
+    ⚠️ Antes de usar: abra este arquivo, edite a linha <code>APPS_SCRIPT_URL</code> no código colando a URL
+    do seu Apps Script, salve, e suba o arquivo pro seu GitHub Pages. É a mesma cópia do arquivo que serve
+    tanto o seu painel quanto a tela de consulta do motorista.
+  </div>
+
+  <div class="card">
+    <h2><span class="step-num">1</span> Colar dados do Radar Expedição</h2>
+    <p class="hint">
+      Selecione as linhas na tabela do dashboard e cole aqui (mantém as colunas: Transporte, Motorista,
+      Hr Entrada, Perm. BBA, Status, Seção atual, Perm. Seção, Situação). O sistema filtra sozinho quem
+      está em ENLONAMENTO e ordena pelo tempo total desde a entrada — quem chegou primeiro vai na frente.
+    </p>
+    <textarea id="dadosInput" placeholder="Cole aqui o texto copiado da tabela..."></textarea>
+    <br>
+    <button class="btn-primary" onclick="montarFila()">Montar fila</button>
+    <div class="status" id="filaStatus"></div>
+    <ul class="queue-list" id="queueList"></ul>
+  </div>
+
+  <div class="card" id="publishCard" style="display:none;">
+    <h2><span class="step-num">2</span> Publicar fila (pra consulta por QR code)</h2>
+    <p class="hint">Salva essa fila num espaço compartilhado. Os motoristas que escanearem o QR code veem essa versão até você publicar de novo.</p>
+    <button class="btn-primary" onclick="publicarFila()">Publicar fila</button>
+    <div class="status" id="publishStatus"></div>
+  </div>
+
+  <div class="card" id="msgCard" style="display:none;">
+    <h2><span class="step-num">3</span> Mensagem pronta pro grupo (opcional)</h2>
+    <p class="hint">Se ainda quiser mandar um resumo pro grupo às vezes, pode copiar daqui.</p>
+    <div class="msg-preview" id="msgPreview"></div>
+    <button class="btn-primary" onclick="copiarMsg()">Copiar mensagem</button>
+    <div class="status" id="copyStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-num">4</span> Gerar QR code pro pátio</h2>
+    <p class="hint">
+      Depois de publicar o arquivo no GitHub Pages, cole aqui o link da página (com "?consulta=1" no final)
+      e gere o QR code pra imprimir e colar na entrada do enlonamento.
+    </p>
+    <input type="text" id="linkConsulta" placeholder="https://seuusuario.github.io/seu-repo/?consulta=1">
+    <button class="btn-primary" onclick="gerarQR()">Gerar QR code</button>
+    <div id="qrOutput"></div>
+  </div>
+
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+let filaAtual = [];
+
+// ⚠️ COLE AQUI a URL do seu Apps Script (termina em /exec), depois de implantar.
+// Precisa ser a MESMA URL tanto no painel quanto na tela de consulta —
+// como é o mesmo arquivo, basta editar aqui uma vez antes de subir pro GitHub Pages.
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-CpPOBppxJnE4-fn3qbHMvduFqLc44qhKWWhuec6mUrnPPSV_B3w7hqxda8tCzgwh/exec";
+
+function normalizar(txt){
+  return (txt||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
+}
+
+function paraSegundos(hms){
+  if(!hms) return null;
+  const partes = hms.trim().split(':').map(p=>parseInt(p,10));
+  if(partes.some(isNaN)) return null;
+  if(partes.length === 3){
+    const [h,m,s] = partes;
+    return h*3600 + m*60 + s;
+  }
+  if(partes.length === 2){
+    const [m,s] = partes;
+    return m*60 + s;
+  }
+  return null;
+}
+
+function formatarDuracao(totalSeg){
+  const h = Math.floor(totalSeg/3600);
+  const m = Math.floor((totalSeg%3600)/60);
+  if(h>0) return `${h}h${m>0? ' '+m+'min':''}`;
+  return `${m}min`;
+}
+
+function parseLinha(linha){
+  const campos = linha.split('\t').map(c=>c.trim());
+  if(campos.length < 6) return null; // linha incompleta, provavelmente lixo/cabeçalho
+
+  const tr = campos[0];
+  const motoristaCampo = campos[1] || '';
+  const hrEntrada = campos[2] || '';
+  const permBBA = campos[3] || '';
+  const status = campos[4] || '';
+  const secaoAtual = campos[5] || '';
+  const permSecao = campos[6] || '';
+  const situacao = campos[7] || 'Normal';
+
+  if(!tr || !/^\d+$/.test(tr)) return null; // sem número de transporte, não é uma linha de dado válida
+
+  // separa nome e telefone do campo "NOME ((DDD)NUMERO)"
+  const m = motoristaCampo.match(/^(.*?)\s*\((.+)\)$/);
+  const nome = m ? m[1].trim() : motoristaCampo.trim();
+  const telefone = m ? m[2].trim() : '';
+
+  return { tr, nome, telefone, hrEntrada, permBBA, status, secaoAtual, permSecao, situacao };
+}
+
+function montarFila(){
+  const txt = document.getElementById('dadosInput').value;
+  const statusEl = document.getElementById('filaStatus');
+  if(!txt.trim()){
+    statusEl.textContent = 'Cole os dados copiados do Radar antes de montar a fila.';
+    statusEl.className = 'status err';
+    return;
+  }
+
+  const linhas = txt.split('\n').map(l=>l.replace(/\r/g,'')).filter(l=>l.trim());
+  let ignoradas = 0;
+  let foraDoSetor = 0;
+  const registros = [];
+
+  linhas.forEach(l=>{
+    const reg = parseLinha(l);
+    if(!reg){ ignoradas++; return; }
+    if(!normalizar(reg.secaoAtual).includes('lonamento')){
+      foraDoSetor++;
+      return;
+    }
+    registros.push(reg);
+  });
+
+  // ordena por tempo total desde a entrada (Perm. BBA) — quem está há mais tempo na Belgo vai primeiro
+  registros.forEach(r => {
+    r._segBBA = paraSegundos(r.permBBA) ?? 0;
+    r._segSecao = paraSegundos(r.permSecao) ?? 0;
+  });
+  registros.sort((a,b)=> b._segBBA - a._segBBA);
+
+  filaAtual = registros;
+
+  statusEl.className = 'status';
+  let msg = `Fila montada com ${filaAtual.length} caminhão(ões) em enlonamento.`;
+  if(foraDoSetor) msg += ` ${foraDoSetor} de fora (outro setor).`;
+  if(ignoradas) msg += ` ${ignoradas} linha(s) ignorada(s) (sem dados reconhecíveis).`;
+  statusEl.textContent = msg;
+
+  renderFila();
+  gerarMensagem();
+  document.getElementById('publishCard').style.display = filaAtual.length ? 'block' : 'none';
+}
+
+function renderFila(){
+  const ul = document.getElementById('queueList');
+  ul.innerHTML = '';
+  filaAtual.forEach((item, idx)=>{
+    const li = document.createElement('li');
+    if(idx===0) li.classList.add('next');
+    const tempoTotal = item._segBBA ? formatarDuracao(item._segBBA) : '—';
+    const tempoSecao = item._segSecao ? formatarDuracao(item._segSecao) : '—';
+    li.innerHTML = `
+      <div class="pos">${idx+1}</div>
+      <div style="flex:1;">
+        <div><strong>${item.nome}</strong> · TR ${item.tr}</div>
+        <div style="font-size:.75rem;color:#5b6b60;">
+          Entrada: ${item.hrEntrada} · Total (BBA): ${tempoTotal} · Em enlonamento: ${tempoSecao} ${item.telefone ? '· 📞 '+item.telefone : ''}
+        </div>
+      </div>
+      <span class="badge ${item.situacao}">${item.situacao}</span>
+      <div class="reorder">
+        <button onclick="mover(${idx},-1)" title="Subir">↑</button>
+        <button onclick="mover(${idx},1)" title="Descer">↓</button>
+        <button onclick="remover(${idx})" title="Remover">✕</button>
+      </div>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+function mover(idx, dir){
+  const novoIdx = idx + dir;
+  if(novoIdx < 0 || novoIdx >= filaAtual.length) return;
+  [filaAtual[idx], filaAtual[novoIdx]] = [filaAtual[novoIdx], filaAtual[idx]];
+  renderFila();
+  gerarMensagem();
+}
+
+function remover(idx){
+  filaAtual.splice(idx,1);
+  renderFila();
+  gerarMensagem();
+}
+
+function gerarMensagem(){
+  if(filaAtual.length === 0){
+    document.getElementById('msgCard').style.display = 'none';
+    return;
+  }
+  const emojiSituacao = { Normal:'🟢', Alerta:'🟡', Urgente:'🔴' };
+  const linhas = ['📋 *FILA DE ENLONAMENTO*', ''];
+  filaAtual.forEach((item, idx)=>{
+    const pos = idx+1;
+    const tempoTxt = item._segBBA ? formatarDuracao(item._segBBA) : 'sem tempo registrado';
+    const emoji = emojiSituacao[item.situacao] || '';
+    let linha = `${pos}º ${item.nome} — ${tempoTxt} de espera ${emoji} ${item.situacao}`;
+    if(idx===0) linha += '\n➡️ *pode encostar agora*';
+    linhas.push(linha);
+  });
+  linhas.push('');
+  linhas.push('Aguardem a chamada. Assim que um encostar, aviso o próximo aqui.');
+  document.getElementById('msgPreview').textContent = linhas.join('\n');
+  document.getElementById('msgCard').style.display = 'block';
+}
+
+function copiarMsg(){
+  const txt = document.getElementById('msgPreview').textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const s = document.getElementById('copyStatus');
+    s.textContent = 'Mensagem copiada! Só colar no grupo.';
+    s.className = 'status';
+  }).catch(()=>{
+    const s = document.getElementById('copyStatus');
+    s.textContent = 'Não consegui copiar automaticamente — selecione o texto manualmente.';
+    s.className = 'status err';
+  });
+}
+
+async function publicarFila(){
+  const statusEl = document.getElementById('publishStatus');
+  if(APPS_SCRIPT_URL.includes('COLOQUE_AQUI')){
+    statusEl.className = 'status err';
+    statusEl.textContent = 'Antes de publicar, configure a URL do Apps Script no código (topo do arquivo).';
+    return;
+  }
+  try{
+    const dados = filaAtual.map((item, idx) => ({
+      pos: idx+1,
+      tr: item.tr,
+      nome: item.nome,
+      situacao: item.situacao,
+      tempoTotal: item._segBBA ? formatarDuracao(item._segBBA) : ''
+    }));
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors', // necessário pro Apps Script aceitar sem bloqueio de CORS
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fila: dados })
+    });
+    statusEl.className = 'status';
+    statusEl.textContent = `Fila enviada às ${new Date().toLocaleTimeString('pt-BR')}. Confira na aba de consulta se chegou certo.`;
+  }catch(e){
+    statusEl.className = 'status err';
+    statusEl.textContent = 'Erro ao publicar. Confira a URL do Apps Script e sua conexão com a internet.';
+  }
+}
+
+function gerarQR(){
+  const link = document.getElementById('linkConsulta').value.trim();
+  const out = document.getElementById('qrOutput');
+  out.innerHTML = '';
+  if(!link){
+    out.innerHTML = '<p class="status err">Cole o link antes de gerar o QR code.</p>';
+    return;
+  }
+  new QRCode(out, {
+    text: link,
+    width: 220,
+    height: 220,
+    colorDark: '#0F2E1F',
+    colorLight: '#ffffff'
+  });
+}
+
+function renderFilaPublica(payload){
+  const resultEl = document.getElementById('consultaResultado');
+  const fila = payload.fila || [];
+  if(fila.length === 0){
+    resultEl.innerHTML = '<p class="status">Nenhum caminhão na fila de enlonamento no momento.</p>';
+    return;
+  }
+  const emojiSituacao = { Normal:'🟢', Alerta:'🟡', Urgente:'🔴' };
+  let html = '<ul class="queue-list">';
+  fila.forEach(item => {
+    const classeNext = item.pos === 1 ? ' next' : '';
+    html += `
+      <li class="${classeNext.trim()}">
+        <div class="pos">${item.pos}</div>
+        <div style="flex:1;">
+          <div><strong>${item.nome}</strong></div>
+          <div style="font-size:.75rem;color:#5b6b60;">Tempo total: ${item.tempoTotal || '—'}${item.pos===1 ? ' · ➡️ pode encostar agora' : ''}</div>
+        </div>
+        <span class="badge ${item.situacao}">${item.situacao}</span>
+      </li>
+    `;
+  });
+  html += '</ul>';
+  html += `<p class="hint" style="margin-top:10px;text-align:center;">Atualizado às ${payload.atualizadoEm ? new Date(payload.atualizadoEm).toLocaleTimeString('pt-BR') : '—'}</p>`;
+  resultEl.innerHTML = html;
+}
+
+async function carregarFilaPublica(){
+  const resultEl = document.getElementById('consultaResultado');
+  if(APPS_SCRIPT_URL.includes('COLOQUE_AQUI')){
+    resultEl.innerHTML = '<p class="status err">Sistema ainda não configurado. Fale com o encarregado.</p>';
+    return;
+  }
+  resultEl.innerHTML = '<p class="status">Carregando fila...</p>';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL);
+    const payload = await res.json();
+    renderFilaPublica(payload);
+  }catch(e){
+    resultEl.innerHTML = '<p class="status err">Não consegui carregar a fila. Verifique sua internet e tente de novo.</p>';
+  }
+}
+
+// roteamento: decide se mostra o painel do encarregado ou a tela de consulta do motorista
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const modoConsulta = params.get('consulta') === '1';
+  document.getElementById('consultaView').style.display = modoConsulta ? 'block' : 'none';
+  document.getElementById('adminView').style.display = modoConsulta ? 'none' : 'block';
+  if(modoConsulta){
+    carregarFilaPublica();
+    setInterval(carregarFilaPublica, 30000); // atualiza sozinho a cada 30s
+  }
+})();
+</script>
+
+</body>
+</html>
