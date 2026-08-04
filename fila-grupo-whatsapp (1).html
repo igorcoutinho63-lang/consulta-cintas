@@ -519,7 +519,7 @@ function renderFilaPublica(payload){
         <div class="pos">${item.pos}</div>
         <div style="flex:1;">
           <div><strong>${item.nome}</strong></div>
-          <div style="font-size:.75rem;color:#5b6b60;">Tempo total: ${item.tempoTotal || '—'}${item.pos===1 ? ' · ➡️ pode encostar agora' : ''}</div>
+          <div style="font-size:.75rem;color:#5b6b60;">TR ${item.tr} · Tempo total: ${item.tempoTotal || '—'}${item.pos===1 ? ' · ➡️ pode encostar agora' : ''}</div>
         </div>
         <span class="badge ${item.situacao}">${item.situacao}</span>
       </li>
