@@ -212,14 +212,12 @@
 <div id="consultaView" style="display:none;">
   <header>
     <h1>Fila de Enlonamento</h1>
-    <p>Consulte sua posição na fila</p>
+    <p>Posição atual de cada caminhão</p>
   </header>
   <main>
     <div class="card">
-      <p class="hint">Digite o número do seu TR (transporte) pra ver sua posição na fila de enlonamento.</p>
-      <input type="text" id="consultaInput" placeholder="Ex: 0015373714">
-      <button class="btn-primary" onclick="consultarPosicao()">Ver minha posição</button>
-      <div id="consultaResultado"></div>
+      <div id="consultaResultado"><p class="status">Carregando fila...</p></div>
+      <button class="btn-primary" onclick="carregarFilaPublica()">Atualizar</button>
     </div>
   </main>
 </div>
@@ -505,41 +503,46 @@ function gerarQR(){
   });
 }
 
-async function consultarPosicao(){
-  const termoBruto = document.getElementById('consultaInput').value.trim();
+function renderFilaPublica(payload){
   const resultEl = document.getElementById('consultaResultado');
-  if(!termoBruto){
-    resultEl.innerHTML = '<p class="status err">Digite o número do TR.</p>';
+  const fila = payload.fila || [];
+  if(fila.length === 0){
+    resultEl.innerHTML = '<p class="status">Nenhum caminhão na fila de enlonamento no momento.</p>';
     return;
   }
+  const emojiSituacao = { Normal:'🟢', Alerta:'🟡', Urgente:'🔴' };
+  let html = '<ul class="queue-list">';
+  fila.forEach(item => {
+    const classeNext = item.pos === 1 ? ' next' : '';
+    html += `
+      <li class="${classeNext.trim()}">
+        <div class="pos">${item.pos}</div>
+        <div style="flex:1;">
+          <div><strong>${item.nome}</strong></div>
+          <div style="font-size:.75rem;color:#5b6b60;">Tempo total: ${item.tempoTotal || '—'}${item.pos===1 ? ' · ➡️ pode encostar agora' : ''}</div>
+        </div>
+        <span class="badge ${item.situacao}">${item.situacao}</span>
+      </li>
+    `;
+  });
+  html += '</ul>';
+  html += `<p class="hint" style="margin-top:10px;text-align:center;">Atualizado às ${payload.atualizadoEm ? new Date(payload.atualizadoEm).toLocaleTimeString('pt-BR') : '—'}</p>`;
+  resultEl.innerHTML = html;
+}
+
+async function carregarFilaPublica(){
+  const resultEl = document.getElementById('consultaResultado');
   if(APPS_SCRIPT_URL.includes('COLOQUE_AQUI')){
     resultEl.innerHTML = '<p class="status err">Sistema ainda não configurado. Fale com o encarregado.</p>';
     return;
   }
-  resultEl.innerHTML = '<p class="status">Consultando...</p>';
+  resultEl.innerHTML = '<p class="status">Carregando fila...</p>';
   try{
     const res = await fetch(APPS_SCRIPT_URL);
     const payload = await res.json();
-    const termo = termoBruto.replace(/\D/g,'');
-    const item = (payload.fila || []).find(f => String(f.tr).replace(/\D/g,'') === termo);
-    if(!item){
-      resultEl.innerHTML = '<p class="status err">TR não encontrado na fila de enlonamento. Confira o número ou fale com o encarregado.</p>';
-      return;
-    }
-    const emojiSituacao = { Normal:'🟢', Alerta:'🟡', Urgente:'🔴' };
-    resultEl.innerHTML = `
-      <div class="consulta-resultado">
-        <div class="consulta-pos">${item.pos}º</div>
-        <div class="consulta-nome">${item.nome}</div>
-        <div class="hint" style="margin-top:6px;">
-          ${emojiSituacao[item.situacao]||''} ${item.situacao} · tempo total: ${item.tempoTotal || '—'}
-        </div>
-        ${item.pos===1 ? '<p style="color:var(--amber);font-weight:800;margin-top:10px;">➡️ PODE ENCOSTAR AGORA</p>' : ''}
-        <p class="hint" style="margin-top:14px;">Atualizado às ${payload.atualizadoEm ? new Date(payload.atualizadoEm).toLocaleTimeString('pt-BR') : '—'}</p>
-      </div>
-    `;
+    renderFilaPublica(payload);
   }catch(e){
-    resultEl.innerHTML = '<p class="status err">Não consegui consultar agora. Verifique sua internet e tente de novo.</p>';
+    resultEl.innerHTML = '<p class="status err">Não consegui carregar a fila. Verifique sua internet e tente de novo.</p>';
   }
 }
 
@@ -549,6 +552,10 @@ async function consultarPosicao(){
   const modoConsulta = params.get('consulta') === '1';
   document.getElementById('consultaView').style.display = modoConsulta ? 'block' : 'none';
   document.getElementById('adminView').style.display = modoConsulta ? 'none' : 'block';
+  if(modoConsulta){
+    carregarFilaPublica();
+    setInterval(carregarFilaPublica, 30000); // atualiza sozinho a cada 30s
+  }
 })();
 </script>
 
